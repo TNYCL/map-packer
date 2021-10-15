@@ -16,6 +16,9 @@ root.withdraw()
 VERSION = "0.1"
 DEBUG = True
 
+project_name = ''
+filepath = ''
+
 def success(message):
     print(Fore.GREEN + "+: " + Style.RESET_ALL + message + Fore.RESET)
 
@@ -44,18 +47,15 @@ def debug_traceback():
 def get_assets_folder():
     return os.path.join(os.getcwd(), "assets")
 
-def get_file_path():
-    return str(filepath)
+def skin_assets(extract_to='./assets/skin/settings'):
+    settings_url = "https://cdn.tnycl.com/map_packer/skin/settings.zip"
+    template_url = "https://cdn.tnycl.com/map_packer/skin/template.zip"
 
-def download_required(extract_to='./assets/settings'):
-    settings_url = "https://cdn.tnycl.com/skin_packer/settings.zip"
-    template_url = "https://cdn.tnycl.com/skin_packer/template.zip"
-
-    settings_exist = os.path.exists(os.path.join(get_assets_folder(), "settings"))
-    template_exist = os.path.exists(os.path.join(get_assets_folder(), "template"))
+    settings_exist = os.path.exists(os.path.join(get_assets_folder(), "skin", "settings"))
+    template_exist = os.path.exists(os.path.join(get_assets_folder(), "skin", "template"))
 
     if settings_exist == False:
-        warning('Settings folder not exists, downloading.')
+        warn('Skin: settings folder not exists, downloading.')
         try:
             context = ssl._create_unverified_context()
             http_response = urlopen(settings_url, context=context)
@@ -68,14 +68,49 @@ def download_required(extract_to='./assets/settings'):
             error('There was a problem downloading the template folder.')
             return debug_traceback()
     if template_exist == False:
-        warning('Template folder not exists, downloading.')
+        warn('Skin: template folder not exists, downloading.')
         try:
             context = ssl._create_unverified_context()
             http_response = urlopen(template_url, context=context)
             
             message('Template ZIP Exctracting...')
             zipfile = ZipFile(BytesIO(http_response.read()))
-            zipfile.extractall(path='./assets/template')
+            zipfile.extractall(path='./assets/skin/template')
+            message('Template folder successfully created.')
+        except Exception:
+            error('There was a problem downloading the settings folder.')
+            return debug_traceback()
+    return True
+
+def world_assets(extract_to='./assets/world/settings'):
+    settings_url = "https://cdn.tnycl.com/map_packer/world/settings.zip"
+    template_url = "https://cdn.tnycl.com/map_packer/world/template.zip"
+
+    settings_exist = os.path.exists(os.path.join(get_assets_folder(), "world", "settings"))
+    template_exist = os.path.exists(os.path.join(get_assets_folder(), "world", "template"))
+
+    if settings_exist == False:
+        warn('World: settings folder not exists, downloading.')
+        try:
+            context = ssl._create_unverified_context()
+            http_response = urlopen(settings_url, context=context)
+
+            message('Settings ZIP Exctracting...')
+            zipfile = ZipFile(BytesIO(http_response.read()))
+            zipfile.extractall(path=extract_to)
+            message('Settings folder successfully created.')
+        except Exception:
+            error('There was a problem downloading the template folder.')
+            return debug_traceback()
+    if template_exist == False:
+        warn('World: template folder not exists, downloading.')
+        try:
+            context = ssl._create_unverified_context()
+            http_response = urlopen(template_url, context=context)
+            
+            message('Template ZIP Exctracting...')
+            zipfile = ZipFile(BytesIO(http_response.read()))
+            zipfile.extractall(path='./assets/world/template')
             message('Template folder successfully created.')
         except Exception:
             error('There was a problem downloading the settings folder.')
@@ -83,29 +118,41 @@ def download_required(extract_to='./assets/settings'):
     return True
 
 def check_skin_pack():
-    if os.path.exists(get_file_path(), "Content", "skin_pack"): return True
+    if os.path.exists(filepath + "/skin"): return True
     return False
 
-def check_folders():
-    if os.path.exists(get_file_path(), "Content") == False:
-        error('"Content" folder not found.')
-    elif os.path.exists(get_file_path(), "Marketing Art") == False:
-        error('"Marketing Art" folder not found.')
-    elif os.path.exists(get_file_path(), "Store Art") == False:
-        error('"Store Art" folder not found.')
-    
+def check_world_folders():
+    if os.path.exists(filepath + "/arts") == False:
+        error('"arts" folder not exists.')
+    if os.path.exists(filepath + "/arts/ingame") == False:
+        error('"arts/ingame" folder not exists.')
+    if os.path.exists(filepath + "/arts/keyart.png") == False:
+        error('"arts/keyart.png" file not exists.')
+    if os.path.exists(filepath + "/arts/thumbnail.jpg") == False:
+        error('"arts/thumbnail.jpg" file not exists.')
+    if os.path.exists(filepath + "/arts/partnerart.png") == False:
+        error('"arts/partnert.png" file not exists.')
+    if os.path.exists(filepath + "/world.zip") == False:
+        error('"world.mcworld" file not exists.')
 
-def open_file_dialog():
-    if(download_required()):
-        global filepath
+def select_file():
+    if(skin_assets() and world_assets()):
         message('Select folder needs to be packaged.')
         filepath = fd.askdirectory(title='Select Folder')
-        if filepath != '' or filepath != None:
+        if filepath != '':
             success('Folder selected: Path => {path}'.format(path=str(filepath)))
-            check_folders()
+            print(filepath + "/skin")
+            #if(check_skin_pack()):
+            #    import build_skin as skin
+            #    skin.build()
         else:
             error('File not selected.')
 
-if __name__ == '__main__':
-    message('Welcome to Map:Packer v.{}'.format(VERSION))
-    open_file_dialog()
+if __name__ == "__main__":
+    message("Welcome to Map:Packer v.{}".format(VERSION))
+    project_name = input(Fore.GREEN+'Project Name'+Fore.RESET+': ')
+    try:
+        os.mkdir(os.getcwd() + '/projects/{}'.format(project_name))
+        select_file()
+    except FileExistsError:
+        error("This project already exists.")
