@@ -4,6 +4,10 @@ import sys
 from tkinter import filedialog as fd
 from colorama import Fore, Back, Style
 import os
+import ssl
+from io import BytesIO
+from urllib.request import urlopen
+from zipfile import ZipFile
 
 # Project settings
 root = tk.Tk()
@@ -28,7 +32,7 @@ def error(message):
     print(Back.RED + Fore.BLACK + "ERROR:" +
           Fore.RED + Back.RESET + " " + message + Fore.RESET)
 
-def message(message, watch=False):
+def message(message):
     print(Fore.LIGHTCYAN_EX + message)
 
 def debug_traceback():
@@ -40,18 +44,15 @@ def debug_traceback():
 def get_assets_folder():
     return os.path.join(os.getcwd(), "assets")
 
-def download_required(extract_to='./assets/settings'):
-    from os import path
-    import ssl
-    from io import BytesIO
-    from urllib.request import urlopen
-    from zipfile import ZipFile
+def get_file_path():
+    return str(filepath)
 
+def download_required(extract_to='./assets/settings'):
     settings_url = "https://cdn.tnycl.com/skin_packer/settings.zip"
     template_url = "https://cdn.tnycl.com/skin_packer/template.zip"
 
-    settings_exist = path.exists(os.path.join(get_assets_folder(), "settings"))
-    template_exist = path.exists(os.path.join(get_assets_folder(), "template"))
+    settings_exist = os.path.exists(os.path.join(get_assets_folder(), "settings"))
+    template_exist = os.path.exists(os.path.join(get_assets_folder(), "template"))
 
     if settings_exist == False:
         warning('Settings folder not exists, downloading.')
@@ -81,14 +82,27 @@ def download_required(extract_to='./assets/settings'):
             return debug_traceback()
     return True
 
+def check_skin_pack():
+    if os.path.exists(get_file_path(), "Content", "skin_pack"): return True
+    return False
+
+def check_folders():
+    if os.path.exists(get_file_path(), "Content") == False:
+        error('"Content" folder not found.')
+    elif os.path.exists(get_file_path(), "Marketing Art") == False:
+        error('"Marketing Art" folder not found.')
+    elif os.path.exists(get_file_path(), "Store Art") == False:
+        error('"Store Art" folder not found.')
+    
+
 def open_file_dialog():
     if(download_required()):
         global filepath
         message('Select folder needs to be packaged.')
         filepath = fd.askdirectory(title='Select Folder')
-        if filepath != '':
+        if filepath != '' or filepath != None:
             success('Folder selected: Path => {path}'.format(path=str(filepath)))
-            #TODO Dosya seçildikten sonra işlemi başlatacak.
+            check_folders()
         else:
             error('File not selected.')
 
