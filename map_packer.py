@@ -9,6 +9,9 @@ import ssl
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
+import codecs
+import json
+import uuid
 
 # Project settings
 root = tk.Tk()
@@ -34,7 +37,7 @@ def error(message):
           Fore.RED + Back.RESET + " " + message + Fore.RESET)
 
 def message(message):
-    print(Fore.LIGHTCYAN_EX + message)
+    print(Fore.LIGHTCYAN_EX + "-> " + Fore.RESET + message)
 
 def debug_traceback():
     if(DEBUG):
@@ -53,7 +56,7 @@ def download_assets(extract_to='./assets/settings'):
     template_exist = os.path.exists(os.path.join(get_assets_folder(), "template"))
 
     if settings_exist == False:
-        warn('World: settings folder not exists, downloading.')
+        warning('World: settings folder not exists, downloading.')
         try:
             context = ssl._create_unverified_context()
             http_response = urlopen(settings_url, context=context)
@@ -66,7 +69,7 @@ def download_assets(extract_to='./assets/settings'):
             error('There was a problem downloading the template folder.')
             return debug_traceback()
     if template_exist == False:
-        warn('World: template folder not exists, downloading.')
+        warning('World: template folder not exists, downloading.')
         try:
             context = ssl._create_unverified_context()
             http_response = urlopen(template_url, context=context)
@@ -101,7 +104,7 @@ def check_folders():
         build_project()
 
 def build_project():
-    project_path = os.getcwd() + '/projects/' + project_name + '/'
+    project_path = os.getcwd() + '/projects/' + shorted_project_name + '/'
 
     try:
         shutil.copytree('assets/settings', project_path)
@@ -116,8 +119,33 @@ def build_project():
         message('World files are successfully processed.')
     except Exception:
         error("World files couldn't be processed.")
+
     worldtemplate_path = project_path + "Content/world_template/"
+    with codecs.open(worldtemplate_path + "levelname.txt", 'w', 'utf-8') as file:
+        file.write(project_name)
+        file.close()
     
+    leveldat_old = worldtemplate_path + "level.dat_old"
+    if os.path.exists(leveldat_old):
+        os.remove(leveldat_old)
+    #manifest
+    
+    manifest = worldtemplate_path + "manifest.json"
+    with open(manifest) as file:
+        data = json.load(file)
+        data['header']['uuid'] = str(uuid.uuid4())
+        data['modules'][0]['uuid'] = str(uuid.uuid4())
+        data['metadata']['authors'][0] = 
+        json.dump(data, open(manifest, 'w'), indent=4)
+    #text
+
+    with codecs.open(worldtemplate_path + "texts/en_US.lang", "a", "utf-8") as file:
+        file.write("pack.name=" + project_name)
+        file.write("pack.description=" + project_description)
+    world_icon = worldtemplate_path + "world_icon.jpeg"
+    if os.path.exists(world_icon): os.remove(world_icon)
+    shutil.copy(filepath + "/arts/thumbnail.jpg", world_icon)
+
     #skin folder
     has_skin_pack = os.path.exists(filepath + "/skins")
     if has_skin_pack:
@@ -126,6 +154,21 @@ def build_project():
             message('Skin files are successfully processed.')
         except Exception as ex:
             error(ex)
+    has_addons = os.path.exists(filepath + "/addons")
+    if has_addons:
+        BP = os.path.exists(filepath +  "/addons/BP")
+        RP = os.path.exists(filepath +  "/addons/RP")
+        if BP:
+            try:
+                shutil.copytree(filepath + "/addons/BP", worldtemplate_path + "behavior_packs/" + shorted_project_name + " BP", dirs_exist_ok=True)
+            except Exception:
+                error("Addon -> BP files couldn't be processed.")
+        if RP:
+            try:
+                shutil.copytree(filepath + "/addons/RP", worldtemplate_path + "resource_packs/" + shorted_project_name + " RP", dirs_exist_ok=True)
+            except Exception:
+                error("Addon -> RP files couldn't be processed.")
+        message("Addon files are successfully processed.")
     
     #marketing art
     photo_count = 0
@@ -143,18 +186,14 @@ def build_project():
     storeart_path = project_path + "Store Art/"
     for file in os.listdir(filepath + '/arts/ingame'):
         if file == "packicon.jpg":
-            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path)
-            os.rename(project_path + "Store Art/" + file, storeart_path + project_name + "_packicont_0.jpg")
+            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_packicont_0.jpg")
             continue
         if file == "panorama.jpg":
-            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path)
-            os.rename(project_path + "Store Art/" + file, storeart_path + project_name + "_panorama_0.jpg")
+            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_panorama_0.jpg")
             continue
-        shutil.copy(filepath + "/arts/ingame/" + file, storeart_path)
-        os.rename(project_path + "Store Art/" + file, storeart_path + project_name + "_MarketingScreenshot_" + str(photo_count) + ".jpg")
+        shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_MarketingScreenshot_" + str(photo_count) + ".jpg")
         photo_count+=1
-    shutil.copy(filepath + "/arts/thumbnail.jpg", storeart_path)
-    os.rename(project_path + "Store Art/thumbnail.jpg", storeart_path + project_name + "_Thumbnail_0.jpg")
+    shutil.copy(filepath + "/arts/thumbnail.jpg", storeart_path + project_name + "_Thumbnail_0.jpg")
 
 def select_file():
     if(download_assets()):
@@ -171,7 +210,11 @@ if __name__ == "__main__":
     message('Welcome to Map:Packer v.{}'.format(VERSION))
     global project_name
     global shorted_project_name
-    project_name = input(Fore.GREEN+'Normal Project Name'+Fore.RESET+': ')
-    shorted_project_name = input(Fore.GREEN+'Shorted Project Name'+Fore.RESET+': ')
+    global project_description
+    global author
+    project_name = input(Fore.GREEN+'Normal Name'+Fore.RESET+': ')
+    shorted_project_name = input(Fore.GREEN+'Shorted Name'+Fore.RESET+': ')
+    project_description = input(Fore.GREEN+'Description'+Fore.RESET+': ')
+    project_author = input(Fore.GREEN+'Author'+Fore.RESET+': ')
     project_name.replace(" ", "")
     select_file()
