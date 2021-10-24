@@ -129,13 +129,13 @@ def build_project():
     if os.path.exists(leveldat_old):
         os.remove(leveldat_old)
     #manifest
-    
+
     manifest = worldtemplate_path + "manifest.json"
     with open(manifest) as file:
         data = json.load(file)
         data['header']['uuid'] = str(uuid.uuid4())
         data['modules'][0]['uuid'] = str(uuid.uuid4())
-        data['metadata']['authors'][0] = 
+        data['metadata']['authors'][0] = str(project_author)
         json.dump(data, open(manifest, 'w'), indent=4)
     #text
 
