@@ -186,7 +186,7 @@ def build_project():
     storeart_path = project_path + "Store Art/"
     for file in os.listdir(filepath + '/arts/ingame'):
         if file == "packicon.jpg":
-            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_packicont_0.jpg")
+            shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_packicon_0.jpg")
             continue
         if file == "panorama.jpg":
             shutil.copy(filepath + "/arts/ingame/" + file, storeart_path + project_name + "_panorama_0.jpg")
