@@ -216,5 +216,4 @@ if __name__ == "__main__":
     shorted_project_name = input(Fore.GREEN+'Shorted Name'+Fore.RESET+': ')
     project_description = input(Fore.GREEN+'Description'+Fore.RESET+': ')
     project_author = input(Fore.GREEN+'Author'+Fore.RESET+': ')
-    project_name.replace(" ", "")
     select_file()
